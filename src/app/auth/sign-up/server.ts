@@ -4,7 +4,13 @@ import { generateRegistrationOptions, verifyRegistrationResponse } from "@simple
 import type { RegistrationResponseJSON } from "@simplewebauthn/types";
 import { sign, verify } from "jsonwebtoken";
 import { cookies } from "next/headers";
-import { JWT_EXPIRATION_TIME, ORIGIN, RP_ID, RP_NAME, SESSION_COOKIE_NAME } from "@/app/auth/constants";
+import {
+	JWT_EXPIRATION_TIME,
+	ORIGIN,
+	RP_ID,
+	RP_NAME,
+	SESSION_COOKIE_NAME,
+} from "@/app/auth/constants";
 
 export async function getSignUpOptions(username: string) {
 	const options = await generateRegistrationOptions({
@@ -73,11 +79,11 @@ export async function registerCredential(credential: RegistrationResponseJSON, t
 			})),
 		});
 	}
-  // set session cookie
-  const sessionToken = sign({ userId: user.id }, process.env.JWT_SECRET!, {
-    expiresIn: JWT_EXPIRATION_TIME,
-  });
-  const cookieJar = await cookies()
-  cookieJar.set(SESSION_COOKIE_NAME, sessionToken, { httpOnly: true, path: "/" });
-  return { success: true };
+	// set session cookie
+	const sessionToken = sign({ userId: user.id }, process.env.JWT_SECRET!, {
+		expiresIn: JWT_EXPIRATION_TIME,
+	});
+	const cookieJar = await cookies();
+	cookieJar.set(SESSION_COOKIE_NAME, sessionToken, { httpOnly: true, path: "/" });
+	return { success: true };
 }
