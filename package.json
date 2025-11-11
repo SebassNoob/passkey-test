@@ -1,23 +1,39 @@
 {
-  "name": "passkey-test",
-  "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start"
-  },
-  "dependencies": {
-    "react": "19.2.0",
-    "react-dom": "19.2.0",
-    "next": "16.0.1"
-  },
-  "devDependencies": {
-    "typescript": "^5",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "@tailwindcss/postcss": "^4",
-    "tailwindcss": "^4"
-  }
+	"name": "passkey-test",
+	"version": "0.1.0",
+	"private": true,
+	"scripts": {
+		"dev": "next dev",
+		"build": "next build",
+		"start": "next start",
+		"prisma:generate": "bunx prisma generate --schema=src/db/schema.prisma",
+		"prisma:migrate": "bunx prisma migrate dev --schema=src/db/schema.prisma",
+		"prisma:format": "bunx prisma format --schema=src/db/schema.prisma",
+		"lint": "biome lint --write ./src",
+		"format": "biome format --write ."
+	},
+	"dependencies": {
+		"@hookform/resolvers": "^5.2.2",
+		"@prisma/client": "^6.19.0",
+		"@simplewebauthn/browser": "^13.2.2",
+		"@simplewebauthn/server": "^13.2.2",
+		"@simplewebauthn/types": "^12.0.0",
+		"jsonwebtoken": "^9.0.2",
+		"next": "16.0.1",
+		"react": "19.2.0",
+		"react-dom": "19.2.0",
+		"react-hook-form": "^7.66.0",
+		"zod": "^4.1.12"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.3.2",
+		"@tailwindcss/postcss": "^4",
+		"@types/jsonwebtoken": "^9.0.10",
+		"@types/node": "^20",
+		"@types/react": "^19",
+		"@types/react-dom": "^19",
+		"prisma": "^6.19.0",
+		"tailwindcss": "^4",
+		"typescript": "^5"
+	}
 }
