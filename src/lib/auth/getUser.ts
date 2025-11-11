@@ -11,9 +11,13 @@ export async function getUser() {
 	}
 
 	try {
+		// verify the session token
+		// if expired or tampered with, will throw an error
 		const payload = verify(sessionToken, process.env.JWT_SECRET!) as { userId: number };
+
 		return { valid: true, userId: payload.userId };
 	} catch (error) {
+		console.log(error);
 		return { valid: false, error: "Invalid session token" };
 	}
 }

@@ -11,8 +11,10 @@ import {
 	RP_NAME,
 	SESSION_COOKIE_NAME,
 } from "@/app/auth/constants";
+import { randomBytes } from "node:crypto";
 
 export async function getSignUpOptions(username: string) {
+	// we generate a challenge for the user to sign up with
 	const options = await generateRegistrationOptions({
 		rpName: RP_NAME,
 		rpID: RP_ID,
@@ -33,8 +35,10 @@ export async function getSignUpOptions(username: string) {
 }
 
 export async function registerCredential(credential: RegistrationResponseJSON, token: string) {
+	// we validate the jwt has not been tampered with and get the challenge and username from it
 	const payload = verify(token, process.env.JWT_SECRET!) as { challenge: string; username: string };
 
+	// verify the registration response with the challenge from the jwt
 	const verification = await verifyRegistrationResponse({
 		response: credential,
 		expectedChallenge: payload.challenge,
@@ -43,25 +47,32 @@ export async function registerCredential(credential: RegistrationResponseJSON, t
 	});
 
 	if (!verification.verified) {
-		throw new Error("Registration verification failed");
-	}
-
-	const { registrationInfo } = verification;
-	if (!registrationInfo) {
-		throw new Error("Registration info not found");
+		return { success: false, error: "Could not verify registration response" };
 	}
 
 	// Store the credential in the database
-	const user = await prisma.user.create({
-		data: {
-			username: payload.username,
-			email: `${payload.username}@placeholder.com`,
-		},
-	});
+	let user;
+	try {
+		user = await prisma.user.create({
+			data: {
+				username: payload.username,
+				email: `${payload.username}-${randomBytes(32).toString("base64")}@placeholder.com`,
+			},
+		});
+	} catch (error) {
+		return { success: false, error: "Username already exists" };
+	}
+
+	// extract the registration info
+	const { registrationInfo } = verification;
+	if (!registrationInfo) {
+		return { success: false, error: "Registration info not found" };
+	}
 
 	// Convert public key to base64 for storage
 	const publicKeyBase64 = Buffer.from(registrationInfo.credential.publicKey).toString("base64");
 
+	// Store credential
 	const newCredential = await prisma.credential.create({
 		data: {
 			userId: user.id,
@@ -79,7 +90,8 @@ export async function registerCredential(credential: RegistrationResponseJSON, t
 			})),
 		});
 	}
-	// set session cookie
+
+	// issue a new session token
 	const sessionToken = sign({ userId: user.id }, process.env.JWT_SECRET!, {
 		expiresIn: JWT_EXPIRATION_TIME,
 	});
