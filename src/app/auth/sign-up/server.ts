@@ -1,7 +1,10 @@
 "use server";
 import { prisma } from "@db/client";
-import { generateRegistrationOptions, verifyRegistrationResponse } from "@simplewebauthn/server";
-import type { RegistrationResponseJSON } from "@simplewebauthn/types";
+import {
+	generateRegistrationOptions,
+	verifyRegistrationResponse,
+	type RegistrationResponseJSON,
+} from "@simplewebauthn/server";
 import { sign, verify } from "jsonwebtoken";
 import { cookies } from "next/headers";
 import {
@@ -12,6 +15,7 @@ import {
 	SESSION_COOKIE_NAME,
 } from "@/app/auth/constants";
 import { randomBytes } from "node:crypto";
+import type { User } from "@prisma/client";
 
 export async function getSignUpOptions(username: string) {
 	// we generate a challenge for the user to sign up with
@@ -22,7 +26,8 @@ export async function getSignUpOptions(username: string) {
 		attestationType: "none",
 		authenticatorSelection: {
 			residentKey: "preferred",
-			userVerification: "required",
+			userVerification: "preferred",
+			authenticatorAttachment: "platform",
 		},
 	});
 
@@ -51,7 +56,7 @@ export async function registerCredential(credential: RegistrationResponseJSON, t
 	}
 
 	// Store the credential in the database
-	let user;
+	let user: User;
 	try {
 		user = await prisma.user.create({
 			data: {
@@ -69,12 +74,14 @@ export async function registerCredential(credential: RegistrationResponseJSON, t
 		return { success: false, error: "Registration info not found" };
 	}
 
-	// Convert public key to base64 for storage
-	const publicKeyBase64 = Buffer.from(registrationInfo.credential.publicKey).toString("base64");
+	// Convert public key to base64url for storage, but use credential ID directly as string
+	const publicKeyBase64 = Buffer.from(registrationInfo.credential.publicKey).toString("base64url");
+	const credentialId = credential.id; // Use the credential ID directly from the registration response
 
 	// Store credential
 	const newCredential = await prisma.credential.create({
 		data: {
+			id: credentialId,
 			userId: user.id,
 			publicKey: publicKeyBase64,
 			signCount: registrationInfo.credential.counter,
@@ -92,7 +99,7 @@ export async function registerCredential(credential: RegistrationResponseJSON, t
 	}
 
 	// issue a new session token
-	const sessionToken = sign({ userId: user.id }, process.env.JWT_SECRET!, {
+	const sessionToken = sign(user, process.env.JWT_SECRET!, {
 		expiresIn: JWT_EXPIRATION_TIME,
 	});
 	const cookieJar = await cookies();

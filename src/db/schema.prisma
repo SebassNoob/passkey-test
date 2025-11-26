@@ -20,7 +20,7 @@ model User {
 }
 
 model Credential {
-  id          String   @id @default(cuid())      
+  id          String   @id // credential ID from authenticator
   userId      String
   user        User     @relation(fields: [userId], references: [id])
   publicKey   String

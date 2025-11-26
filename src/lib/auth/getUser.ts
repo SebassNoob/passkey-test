@@ -2,6 +2,7 @@
 import { SESSION_COOKIE_NAME } from "@/app/auth/constants";
 import { verify } from "jsonwebtoken";
 import { cookies } from "next/headers";
+import type { User } from "@prisma/client";
 
 export async function getUser() {
 	const cookieJar = await cookies();
@@ -13,9 +14,9 @@ export async function getUser() {
 	try {
 		// verify the session token
 		// if expired or tampered with, will throw an error
-		const payload = verify(sessionToken, process.env.JWT_SECRET!) as { userId: number };
+		const payload = verify(sessionToken, process.env.JWT_SECRET!) as User;
 
-		return { valid: true, userId: payload.userId };
+		return { valid: true, user: payload };
 	} catch (error) {
 		console.log(error);
 		return { valid: false, error: "Invalid session token" };
